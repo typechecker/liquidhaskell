@@ -1,7 +1,6 @@
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE DerivingVia                #-}
 
 
 -- | This module has a function that computes the "slice" i.e. subset of the `Ms.BareSpec` that 
