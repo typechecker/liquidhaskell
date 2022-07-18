@@ -5,6 +5,7 @@ The intended use of this module is to shelter LiquidHaskell from changes to the 
 
 --}
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -18,22 +19,59 @@ module Internal.GHC.API (
     module Ghc
   , module StableModule
 
+-- Specific exports for 8.6.5
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
   , pattern Bndr
   , pattern LitString
   , pattern LitFloat
   , pattern LitDouble
   , pattern LitChar
   , VarBndr
+#endif
+#endif
 
+-- Specific exports for 8.6.5 and 8.8.x
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
+  , AnonArgFlag(..)
+  , pattern FunTy
   , pattern AnonTCB
-  , ft_af, ft_arg, ft_res
+  , ft_af, ft_mult, ft_arg, ft_res
+  , bytesFS
+  , mkFunTy
+  , isEvVarType
+  , isEqPrimPred
   , noExtField
   , Mult
   , pattern Many
+#endif
+#endif
 
   , tyConRealArity
   , dataConExTyVars
 
+-- Specific exports for 8.8.x
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
+  , isEqPred
+#endif
+#endif
+
+-- Specific exports for 8.10.x
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,10,0,0) && !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
+  , Mult
+  , pattern Many
+  , pattern FunTy
+  , mkFunTy
+  , ft_af, ft_mult, ft_arg, ft_res
+#endif
+#endif
+
+-- Shared exports for GHC < 9
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
   , pattern RealSrcSpan
   , pattern UnhelpfulSpan
   , UnhelpfulSpanReason(..)
@@ -58,9 +96,24 @@ module Internal.GHC.API (
   , isBootSummary
   , mkIntExprInt
   , dataConFullSig
+#endif
+#endif
 
+-- Specific exports for 9.x
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
+  , fsToUnitId
+  , moduleUnitId
+  , thisPackage
+  , renderWithStyle
+  , mkUserStyle
   , pattern LitNumber
+  , dataConSig
   , getDependenciesModuleNames
+  , gcatch
+#endif
+#endif
+
   ) where
 
 import           Language.Haskell.Liquid.GHC.API.StableModule      as StableModule
@@ -68,6 +121,10 @@ import           GHC                                               as Ghc hiding
                                                                                  , SrcSpan(RealSrcSpan, UnhelpfulSpan)
                                                                                  , exprType
                                                                                  )
+
+-- Shared imports for GHC < 9
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
 
 import CoreFVs                  as Ghc (exprFreeVarsList)
 import OccurAnal                as Ghc (occurAnalysePgm)
@@ -98,6 +155,7 @@ import ErrUtils                 as Ghc
 import FamInst                  as Ghc
 import FamInstEnv               as Ghc hiding (pprFamInst)
 import Finder                   as Ghc
+import ForeignCall              (CType)
 import GHC                      as Ghc (SrcSpan)
 import GhcMonad                 as Ghc (withSession)
 import GhcPlugins               as Ghc (deserializeWithData , fromSerialized , toSerialized, extendIdSubst)
@@ -153,6 +211,18 @@ import           TcSimplify     as Ghc ( simplifyInfer, simplifyInteractive
 import           TcHsSyn        as Ghc (zonkTopLExpr)
 import           TcEvidence     as Ghc ( TcEvBinds (EvBinds))
 import           DsExpr         as Ghc (dsLExpr)
+#endif
+#endif
+
+--
+-- Compatibility layer for different GHC versions.
+--
+
+--
+-- Specific imports for GHC 8.6.5
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
 
 import qualified Literal as Lit
 import FastString        as Ghc hiding (bytesFS, LitString)
@@ -161,22 +231,54 @@ import Type              as Ghc hiding (typeKind, mkFunTy, splitFunTys, extendCv
 import qualified Type    as Ghc
 import qualified Var     as Var
 import qualified GHC.Real
+-- import PrelNames      (eqPrimTyConKey, eqReprPrimTyConKey, gHC_REAL, varQual_RDR)
+#endif
+#endif
+
+--
+-- Specific imports for GHC 8.6.5 & 8.8.x
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
 
 import                   Binary
 import                   Data.ByteString (ByteString)
 import                   Data.Data (Data)
+import Kind              as Ghc
 import TyCoRep           as Ghc hiding (Type (FunTy), mkFunTy, extendCvSubst)
 import TyCon             as Ghc hiding (mkAnonTyConBinders, TyConBndrVis(AnonTCB))
 import qualified TyCoRep as Ty hiding (extendCvSubst)
 import qualified TyCon   as Ty
+import Platform as Ghc
+import qualified HsExtension
+-- import PrelNames      (eqPrimTyConKey, eqReprPrimTyConKey, gHC_REAL, varQual_RDR)
+
+#endif
+#endif
+
+--
+-- Specific imports for 8.8.x
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
 
 import FastString           as Ghc hiding (bytesFS)
 import TcType               as Ghc hiding (typeKind, mkFunTy, isEqPred)
 import Type                 as Ghc hiding (typeKind, mkFunTy, isEvVarType, isEqPred, splitFunTys, extendCvSubst)
 import qualified Type       as Ghc
+import qualified Type       as Ghc (isEvVarType)
 import qualified PrelNames  as Ghc
 import Data.Foldable        (asum)
+-- import PrelNames      (eqPrimTyConKey, eqReprPrimTyConKey, gHC_REAL, varQual_RDR)
+#endif
+#endif
 
+--
+-- Specific imports for GHC 8.10
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,10,0,0) && !MIN_VERSION_GLASGOW_HASKELL (9,0,0,0)
 import GHC.Platform      as  Ghc (Platform)
 import Type              as  Ghc hiding (mapType, typeKind, isPredTy, splitFunTys, extendCvSubst)
 import qualified Type    as  Ghc hiding (extendCvSubst)
@@ -187,9 +289,115 @@ import TyCoRep           as  Ghc hiding (Type (FunTy), mkFunTy, ft_arg, ft_res, 
 import FastString        as  Ghc
 import Predicate      as Ghc (getClassPredTys_maybe, isEvVarType, getClassPredTys, isDictId)
 import TcOrigin       as Ghc (lexprCtOrigin)
+import Data.Foldable  (asum)
+#endif
+#endif
+
+--
+-- Specific imports for GHC 9
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(9,0,0,0) && !MIN_VERSION_GLASGOW_HASKELL (9,1,0,0)
 
 import Optics
 import qualified Control.Monad.Catch as Ex
+
+import Data.Foldable                  (asum)
+import GHC.Builtin.Names              as Ghc
+import GHC.Builtin.Types              as Ghc
+import GHC.Builtin.Types.Prim         as Ghc
+import GHC.Builtin.Utils              as Ghc
+import GHC.Core                       as Ghc hiding (AnnExpr, AnnExpr' (..), AnnRec, AnnCase)
+import GHC.Core.Class                 as Ghc
+import GHC.Core.Coercion              as Ghc
+import GHC.Core.Coercion.Axiom        as Ghc
+import GHC.Core.ConLike               as Ghc
+import GHC.Core.DataCon               as Ghc
+import GHC.Core.FamInstEnv            as Ghc hiding (pprFamInst)
+import GHC.Core.InstEnv               as Ghc
+import GHC.Core.Lint                  as Ghc hiding (dumpIfSet)
+import GHC.Core.Make                  as Ghc
+import GHC.Core.Opt.Monad             as Ghc (CoreToDo(..))
+import GHC.Core.Opt.WorkWrap.Utils    as Ghc
+import GHC.Core.Predicate             as Ghc (getClassPredTys_maybe, getClassPredTys, isEvVarType, isEqPrimPred, isEqPred, isClassPred, isDictId)
+import GHC.Core.Subst                 as Ghc (deShadowBinds, emptySubst, extendCvSubst)
+import GHC.Core.TyCo.Rep              as Ghc
+import GHC.Core.TyCon                 as Ghc
+import GHC.Core.Type                  as Ghc hiding (typeKind , isPredTy, extendCvSubst, linear)
+import GHC.Core.Unify                 as Ghc
+import GHC.Core.Utils                 as Ghc (exprType)
+import GHC.Data.Bag                   as Ghc
+import GHC.Data.FastString            as Ghc
+import GHC.Data.Graph.Directed        as Ghc
+import GHC.Data.Pair                  as Ghc
+import GHC.Driver.Finder              as Ghc
+import GHC.Driver.Main                as Ghc
+import GHC.Driver.Phases              as Ghc (Phase(StopLn))
+import GHC.Driver.Pipeline            as Ghc (compileFile)
+import GHC.Driver.Session             as Ghc hiding (isHomeModule)
+import GHC.Driver.Types               as Ghc
+import GHC.Driver.Monad               as Ghc (withSession)
+import GHC.HsToCore.Monad             as Ghc
+import GHC.Iface.Syntax               as Ghc
+import GHC.Plugins                    as Ghc ( deserializeWithData
+                                             , fromSerialized
+                                             , toSerialized
+                                             , defaultPlugin
+                                             , Plugin(..)
+                                             , CommandLineOption
+                                             , purePlugin
+                                             , extendIdSubst
+                                             , substExpr
+                                             )
+import GHC.Tc.Instance.Family         as Ghc
+import GHC.Tc.Module                  as Ghc
+import GHC.Tc.Types                   as Ghc
+import GHC.Tc.Utils.Monad             as Ghc hiding (getGHCiMonad)
+import GHC.Tc.Utils.TcType            as Ghc (tcSplitDFunTy, tcSplitMethodTy)
+import GHC.Types.Annotations          as Ghc
+import GHC.Types.Avail                as Ghc
+import GHC.Types.Basic                as Ghc
+import GHC.Types.CostCentre           as Ghc
+import GHC.Types.Id                   as Ghc hiding (lazySetIdInfo, setIdExported, setIdNotExported)
+import GHC.Types.Id.Info              as Ghc
+import GHC.Types.Literal              as Ghc hiding (LitNumber)
+import GHC.Types.Name                 as Ghc hiding (varName, isWiredIn)
+import GHC.Types.Name.Reader          as Ghc
+import GHC.Types.Name.Set             as Ghc
+import GHC.Types.SrcLoc               as Ghc
+import GHC.Types.Unique               as Ghc
+import GHC.Types.Unique.DFM           as Ghc
+import GHC.Types.Unique.FM            as Ghc
+import GHC.Types.Unique.Set           as Ghc
+import GHC.Types.Unique.Supply        as Ghc
+import GHC.Types.Var                  as Ghc
+import GHC.Types.Var.Env              as Ghc
+import GHC.Types.Var.Set              as Ghc
+import GHC.Unit.Module                as Ghc
+import GHC.Utils.Error                as Ghc
+import GHC.Utils.Outputable           as Ghc hiding ((<>), integer, renderWithStyle, mkUserStyle)
+import GHC.Utils.Panic                as Ghc
+import qualified GHC.Types.Literal    as Ghc
+import qualified GHC.Utils.Outputable as Ghc
+import GHC.Tc.Types.Origin            as Ghc (lexprCtOrigin)
+import GHC.Rename.Expr                as Ghc (rnLExpr)
+import GHC.Tc.Gen.Expr                as Ghc (tcInferSigma, tcInferRho)
+import GHC.Tc.Gen.Bind                as Ghc (tcValBinds)
+import GHC.Tc.Solver                  as Ghc
+import GHC.Tc.Utils.Zonk              as Ghc
+import GHC.Core.FVs                   as Ghc (exprFreeVarsList)
+import GHC.Tc.Types.Evidence          as Ghc
+import GHC.HsToCore.Expr              as Ghc
+import GHC.Core.Predicate             as Ghc (mkClassPred)
+import GHC.Core.Opt.OccurAnal         as Ghc
+#endif
+#endif
+
+--
+-- Compat shim for GHC < 9 (shared parts)
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
 
 data BufSpan
 
@@ -279,6 +487,19 @@ mkDataConWorkerName data_con wrk_key =
     dc_name = dataConName data_con
     dc_occ  = nameOccName dc_name
     wrk_occ = mkDataConWorkerOcc dc_occ
+
+pcTyCon :: Name -> Maybe CType -> [TyVar] -> [DataCon] -> TyCon
+pcTyCon name cType tyvars cons
+  = mkAlgTyCon name
+                (mkAnonTyConBinders VisArg tyvars)
+                liftedTypeKind
+                (map (const Representational) tyvars)
+                cType
+                []              -- No stupid theta
+                (mkDataTyConRhs cons)
+                (VanillaAlgTyCon (mkPrelTyConRepName name))
+                False           -- Not in GADT syntax
+
 
 mkWiredInDataConName :: BuiltInSyntax -> Module -> FastString -> Unique -> DataCon -> Name
 mkWiredInDataConName built_in modu fs unique datacon
@@ -396,6 +617,38 @@ dataConFullSig dc =
   let (tyvars, tycovars, eqspecs, theta, tys, ty) = Ghc.dataConFullSig dc
   in  (tyvars, tycovars, eqspecs, theta, map (mkScaled Many) tys, ty)
 
+
+#endif
+#endif
+
+--
+-- Compat shim for GHC 8.6.5
+
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
+
+pattern LitString :: ByteString -> Lit.Literal
+pattern LitString bs <- Lit.MachStr bs where
+    LitString bs = Lit.MachStr bs
+
+pattern LitFloat :: GHC.Real.Ratio Integer -> Lit.Literal
+pattern LitFloat f <- Lit.MachFloat f where
+    LitFloat f = Lit.MachFloat f
+
+pattern LitDouble :: GHC.Real.Ratio Integer -> Lit.Literal
+pattern LitDouble d <- Lit.MachDouble d where
+    LitDouble d = Lit.MachDouble d
+
+pattern LitChar :: Char -> Lit.Literal
+pattern LitChar c <- Lit.MachChar c where
+    LitChar c = Lit.MachChar c
+
+pattern Bndr :: var -> argf -> Var.TyVarBndr var argf
+pattern Bndr var argf <- TvBndr var argf where
+    Bndr var argf = TvBndr var argf
+
+type VarBndr = TyVarBndr
+
 isEqPrimPred :: Type -> Bool
 isEqPrimPred = Ghc.isPredTy
 
@@ -405,6 +658,15 @@ isEvVarType = Ghc.isPredTy
 
 tyConRealArity :: TyCon -> Int
 tyConRealArity = tyConArity
+
+#endif
+#endif
+
+--
+-- Compat shim for GHC-8.6.5 and GHC-8.8.x
+--
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,6,5,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
 
 -- | The non-dependent version of 'ArgFlag'.
 
@@ -419,8 +681,53 @@ data AnonArgFlag
               --   The argument is invisible in source code.
   deriving (Eq, Ord, Data)
 
+instance Outputable AnonArgFlag where
+  ppr VisArg   = text "[vis]"
+  ppr InvisArg = text "[invis]"
+
+instance Binary AnonArgFlag where
+  put_ bh VisArg   = putByte bh 0
+  put_ bh InvisArg = putByte bh 1
+
+  get bh = do
+    h <- getByte bh
+    case h of
+      0 -> return VisArg
+      _ -> return InvisArg
+
+mkAnonTyConBinders :: AnonArgFlag -> [TyVar] -> [TyConBinder]
+mkAnonTyConBinders _ = Ty.mkAnonTyConBinders
+
 bytesFS :: FastString -> ByteString
 bytesFS = fastStringToByteString
+
+mkFunTy :: AnonArgFlag -> Mult -> Type -> Type -> Type
+mkFunTy _ _ = Ty.FunTy
+
+pattern FunTy :: AnonArgFlag -> Mult -> Type -> Type -> Type
+pattern FunTy { ft_af, ft_mult, ft_arg, ft_res } <- ((VisArg,Many,) -> (ft_af, ft_mult, Ty.FunTy ft_arg ft_res)) where
+    FunTy _ft_af _ft_mult ft_arg ft_res = Ty.FunTy ft_arg ft_res
+
+pattern AnonTCB :: AnonArgFlag -> Ty.TyConBndrVis
+pattern AnonTCB af <- ((VisArg,) -> (af, Ty.AnonTCB)) where
+    AnonTCB _af = Ty.AnonTCB
+
+noExtField :: NoExt
+noExtField = NoExt
+
+#endif
+
+-- Compat shim for GHC 8.8.x
+
+#ifdef MIN_VERSION_GLASGOW_HASKELL
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0) && !MIN_VERSION_GLASGOW_HASKELL(8,10,1,0)
+
+isEqPrimPred :: Type -> Bool
+isEqPrimPred ty
+  | Just tc <- tyConAppTyCon_maybe ty
+  = tc `hasKey` Ghc.eqPrimTyConKey || tc `hasKey` Ghc.eqReprPrimTyConKey
+  | otherwise
+  = False
 
 isEqPred :: Type -> Bool
 isEqPred ty
@@ -429,6 +736,13 @@ isEqPred ty
   = cls `hasKey` Ghc.eqTyConKey || cls `hasKey` Ghc.heqTyConKey
   | otherwise
   = False
+
+-- See NOTE [isEvVarType].
+isEvVarType :: Type -> Bool
+isEvVarType = Ghc.isEvVarType
+
+#endif
+#endif
 
 {- | [NOTE:tyConRealArity]
 
@@ -451,8 +765,44 @@ handle a 'TyConApp' in the case of type equality (i.e. ~ ) which was removed in 
 for 8.8.1, which essentially calls 'tcIsConstraintKind' straight away.
 -}
 
+--
+-- Support for GHC >= 8.8
+--
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0) && !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
+
+-- See NOTE [tyConRealArity].
+tyConRealArity :: TyCon -> Int
+tyConRealArity tc = go 0 (tyConKind tc)
+  where
+    go :: Int -> Kind -> Int
+    go !acc k =
+      case asum [fmap snd (splitFunTy_maybe k), fmap snd (splitForAllTy_maybe k)] of
+        Nothing -> acc
+        Just ks -> go (acc + 1) ks
+
 dataConExTyVars :: DataCon -> [TyVar]
 dataConExTyVars = dataConExTyCoVars
+
+#endif
+
+--
+-- Compat shim for 8.10.x
+--
+
+#if MIN_VERSION_GLASGOW_HASKELL(8,10,0,0) && !MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
+pattern FunTy :: AnonArgFlag -> Mult -> Type -> Type -> Type
+pattern FunTy { ft_af, ft_mult, ft_arg, ft_res } <- ((Many,) -> (ft_mult, Ty.FunTy ft_af ft_arg ft_res)) where
+    FunTy ft_af' _ft_mult' ft_arg' ft_res' = Ty.FunTy ft_af' ft_arg' ft_res'
+
+mkFunTy :: AnonArgFlag -> Mult -> Type -> Type -> Type
+mkFunTy af _ arg res = Ty.FunTy af arg res
+#endif
+
+--
+-- Compat shim for 9.0.x
+
+#if MIN_VERSION_GLASGOW_HASKELL(9,0,0,0)
 
 -- 'fsToUnitId' is gone in GHC 9, but we can bring code it in terms of 'fsToUnit' and 'toUnitId'.
 fsToUnitId :: FastString -> UnitId
@@ -463,6 +813,22 @@ moduleUnitId = toUnitId . moduleUnit
 
 thisPackage :: DynFlags -> UnitId
 thisPackage = toUnitId . homeUnit
+
+-- See NOTE [tyConRealArity].
+tyConRealArity :: TyCon -> Int
+tyConRealArity tc = go 0 (tyConKind tc)
+  where
+    go :: Int -> Kind -> Int
+    go !acc k =
+      case asum [fmap (view _3) (splitFunTy_maybe k), fmap snd (splitForAllTy_maybe k)] of
+        Nothing -> acc
+        Just ks -> go (acc + 1) ks
+
+dataConExTyVars :: DataCon -> [TyVar]
+dataConExTyVars = dataConExTyCoVars
+
+getDependenciesModuleNames :: Dependencies -> [ModuleNameWithIsBoot]
+getDependenciesModuleNames = dep_mods
 
 renderWithStyle :: DynFlags -> SDoc -> PprStyle -> String
 renderWithStyle dynflags sdoc style = Ghc.renderWithStyle (Ghc.initSDocContext dynflags style) sdoc
@@ -476,6 +842,11 @@ mkUserStyle _ = Ghc.mkUserStyle
 
 -- In GHC 9 'LitNumber' doesn't have the extra 3rd argument, so we simply ignore it in the construction.
 
+pattern LitNumber :: Ghc.LitNumType -> Integer -> Ghc.Type -> Ghc.Literal
+pattern LitNumber numType integer ty <- ((intPrimTy,) -> (ty, Ghc.LitNumber numType integer))
+  where
+    LitNumber numType integer _ = Ghc.LitNumber numType integer
+
 -- This function is gone in GHC 9.
 dataConSig :: DataCon -> ([TyCoVar], ThetaType, [Type], Type)
 dataConSig dc
@@ -483,3 +854,10 @@ dataConSig dc
 
 gcatch :: (Ex.MonadCatch m, Exception e) => m a -> (e -> m a) -> m a
 gcatch = Ex.catch
+
+#endif
+
+--
+-- End of compatibility shim.
+--
+#endif
