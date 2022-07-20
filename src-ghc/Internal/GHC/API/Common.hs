@@ -1,5 +1,4 @@
-{-# LANGUAGE PatternSynonyms #-}
-module Internal.GHC.API (
+module Internal.GHC.API.Common (
       ErrMsg(..)
     , SourceError
     , SourceText(..)
@@ -64,8 +63,8 @@ module Internal.GHC.API (
     , GhcPs
     , ApiAnns
     , AnnotationComment
-    , nameModule
     , moduleNameString
+    , nameModule
     , nameOccName
     , occNameString
     , nameStableString
@@ -165,15 +164,45 @@ module Internal.GHC.API (
     , tcRnLookupRdrName
     , isPromotedDataCon
     , isTupleDataCon
-
-    -- * Shimmed
-    , UnhelpfulSpanReason(..)
-    , pattern RealSrcSpan
-    , pattern UnhelpfulSpan
-    , GenWithIsBoot(..)
-    , getDependenciesModuleNames
-    , dataConExTyVars 
     ) where
 
-import Internal.GHC.API.Common
-import Internal.GHC.API.Shim
+import GhcPlugins
+import ErrUtils (ErrMsg(..), Severity(..), MsgDoc, Messages)
+import Bag (bagToList, Bag)
+import Avail (AvailInfo, availNames)
+import GHC
+    ( Ghc, ApiAnns, AnnotationComment, RenamedSource
+    , ParsedModule(..), TypecheckedModule(..)
+    , GhcT, ClsInst, FamInst, GhcRn, Class, LHsExpr, LHsType, LHsDecl
+    , GhcPs, DesugaredModule(..), HsModule(..), HsDecl(..), Sig(..), GhcMonad (..), ParsedMod(..)
+    )
+import TcRnTypes (IfM, TcGblEnv, TcM)
+import TcRnMonad (TcRn, mkLongErrAt, getTopEnv)
+import TcRnDriver (TcRnExprMode(..), tcRnLookupRdrName)
+import GHC.Hs (noExtField)
+import CoreLint (lintCoreBindings)
+import TcOrigin (lexprCtOrigin)
+import Predicate (getClassPredTys)
+import Finder (findExposedPackageModule)
+import Panic (throwGhcExceptionIO)
+import HscMain (hscDesugar, hscTypecheckRename, hscParse, hscTcRcLookupName)
+{-
+import HscTypes (SourceError, srcErrorMessages, ModGuts(..), Dependencies, HsParsedModule(..), IsBootInterface, Hsc, HscEnv, hsc_dflags)
+import GHC (RealSrcSpan(..), SrcSpan, noSrcSpan, srcSpanStartLine, srcSpanEndLine, srcSpanStartCol, srcSpanEndCol
+   , ModuleName, FamInst, ClsInst, TyCon, Module(..), Name, moduleNameString, nameModule
+   , ModSummary(..), TypecheckedModule(..), ParsedModule(..), DynFlags(..), ModLocation, ModuleGraph, TyThing, ApiAnns, AnnotationComment, RenamedSource, GhcT, Ghc)
+import GHC.Exception ( SrcLoc(..) )
+import FastString ( FastString, fsLit, unpackFS )
+import Bag (bagToList)
+import NameSet ( NameSet, nameSetElemsStable )
+import Avail (AvailInfo, availNames)
+import CoreSyn (CoreProgram)
+import RdrName (GlobalRdrEnv)
+import Name (nameOccName, nameStableString, occNameString, nameSrcSpan, nameSrcLoc)
+import DynFlags (HasDynFlags)
+import TcRnTypes ( TcGblEnv, IfM )
+import TcRnMonad (TcM)
+import Finder (FindResult(..))
+import UniqFM (UniqFM)
+import SrcLoc (mkRealSrcSpan)
+-}
