@@ -133,7 +133,7 @@ module Internal.GHC.API (
     , Expr(..)
     , Class
     , Var(..)
-    , Type
+    , Type(..)
     , Kind
     , LHsExpr
     , LHsType
@@ -151,6 +151,7 @@ module Internal.GHC.API (
     , Uniquable
     , HsDecl(..)
     , Sig(..)
+    , AnonArgFlag(..)
     , noExtField
     , dataConInstArgTys
     , exprType
@@ -173,6 +174,7 @@ module Internal.GHC.API (
     , GenWithIsBoot(..)
     , getDependenciesModuleNames
     , dataConExTyVars 
+    , pattern FunTy
     ) where
 
 import Internal.GHC.API.Common

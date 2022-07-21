@@ -45,7 +45,7 @@ module Internal.GHC.API.Common (
     , Id
     , IdDetails(..)
     , TyCon
-    , TyThing
+    , TyThing(..)
     , DynFlags(..)
     , HasDynFlags
     , PromotionFlag(..)
@@ -66,6 +66,7 @@ module Internal.GHC.API.Common (
     , moduleNameString
     , nameModule
     , nameOccName
+    , nameUnique
     , occNameString
     , nameStableString
     , nameSrcLoc
@@ -132,7 +133,7 @@ module Internal.GHC.API.Common (
     , Expr(..)
     , Class
     , Var(..)
-    , Type
+    , Type(..)
     , Kind
     , LHsExpr
     , LHsType
@@ -150,6 +151,7 @@ module Internal.GHC.API.Common (
     , Uniquable
     , HsDecl(..)
     , Sig(..)
+    , AnonArgFlag(..)
     , noExtField
     , dataConInstArgTys
     , exprType
@@ -158,12 +160,47 @@ module Internal.GHC.API.Common (
     , isPrimTyCon
     , tyConTyVars
     , mkKindTyCon
+    , mkTyConTy
     , tyConDataCons_maybe
     , lexprCtOrigin
     , getClassPredTys
     , tcRnLookupRdrName
+    , promoteDataCon
     , isPromotedDataCon
     , isTupleDataCon
+    , mkPreludeTyConUnique
+    , mkPreludeDataConUnique
+    , mkWiredInName
+    , mkWiredInTyConName
+    , tyConAppTyCon_maybe
+    , gHC_TYPES
+    , mkDataOccFS
+    , mkAlgTyCon
+    , mkAnonTyConBinders
+    , mkDataTyConRhs
+    , mkPrelTyConRepName
+    , liftedTypeKind
+    , hasKey
+    , mkDataCon
+    , mkTyConApp
+    , mkTyVarTys
+    , mkTyConTagMap
+    , mkDataConWorkId
+    , dataConWorkerUnique
+    , dataConName
+    , dataConWorkId
+    , lookupNameEnv_NF
+    , mkDataConWorkerOcc
+    , HsSrcBang(..)
+    , BuiltInSyntax(..)
+    , ConLike(..)
+    , CType
+    , AlgTyConFlav(..)
+    , Role(..)
+    , DataConRep(..)
+    , RuntimeRepInfo(..)
+    , SrcUnpackedness(..)
+    , SrcStrictness(..)
     ) where
 
 import GhcPlugins
@@ -186,6 +223,12 @@ import Predicate (getClassPredTys)
 import Finder (findExposedPackageModule)
 import Panic (throwGhcExceptionIO)
 import HscMain (hscDesugar, hscTypecheckRename, hscParse, hscTcRcLookupName)
+import TyCoRep (Type(TyVarTy, AppTy, TyConApp, ForAllTy))
+import Unique (mkPreludeTyConUnique, mkPreludeDataConUnique, hasKey, dataConWorkerUnique)
+import PrelNames (gHC_TYPES)
+import ConLike (ConLike(..))
+import ForeignCall (CType)
+import MkId (mkDataConWorkId)
 {-
 import HscTypes (SourceError, srcErrorMessages, ModGuts(..), Dependencies, HsParsedModule(..), IsBootInterface, Hsc, HscEnv, hsc_dflags)
 import GHC (RealSrcSpan(..), SrcSpan, noSrcSpan, srcSpanStartLine, srcSpanEndLine, srcSpanStartCol, srcSpanEndCol
