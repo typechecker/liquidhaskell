@@ -201,6 +201,7 @@ module Internal.GHC.API.Common (
     , RuntimeRepInfo(..)
     , SrcUnpackedness(..)
     , SrcStrictness(..)
+    , TyConBndrVis(..)
     ) where
 
 import GhcPlugins

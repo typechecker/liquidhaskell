@@ -13,7 +13,11 @@ module Internal.GHC.API.Shim (
   , GenWithIsBoot(..)
   , getDependenciesModuleNames
   , dataConExTyVars 
+  , Mult
+  , pattern Many
   , pattern FunTy
+  , mkFunTy
+  , ft_af, ft_mult, ft_arg, ft_res
   ) where
 
 import Internal.GHC.API.Common (FastString, fsLit, unpackFS, Dependencies, ModuleName, DataCon, TyVar, Type, AnonArgFlag (..), mkTyConTy, TyCon, promoteDataCon, Name, Unique, mkPreludeTyConUnique, mkWiredInTyConName, BuiltInSyntax(..), mkPreludeDataConUnique, tyConAppTyCon_maybe, gHC_TYPES, Module, mkWiredInName, ConLike (..), mkDataOccFS, CType, mkAlgTyCon, mkAnonTyConBinders, mkDataTyConRhs, mkPrelTyConRepName, liftedTypeKind, AlgTyConFlav (..), Role (..), hasKey, mkDataCon, mkTyConApp, mkTyVarTys, mkTyConTagMap, mkDataConWorkId, dataConWorkerUnique, TyThing (..), nameModule, nameOccName, nameUnique, dataConName, dataConWorkId, DataConRep (..), RuntimeRepInfo (..), lookupNameEnv_NF, HsSrcBang (..), SrcUnpackedness (..), SrcStrictness (..), SourceText (..), mkDataConWorkerOcc)

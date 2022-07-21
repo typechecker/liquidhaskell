@@ -166,6 +166,7 @@ module Internal.GHC.API (
     , tcRnLookupRdrName
     , isPromotedDataCon
     , isTupleDataCon
+    , TyConBndrVis(..)
 
     -- * Shimmed
     , UnhelpfulSpanReason(..)
@@ -174,7 +175,11 @@ module Internal.GHC.API (
     , GenWithIsBoot(..)
     , getDependenciesModuleNames
     , dataConExTyVars 
+    , Mult
+    , pattern Many
     , pattern FunTy
+    , mkFunTy
+    , ft_af, ft_mult, ft_arg, ft_res
     ) where
 
 import Internal.GHC.API.Common
