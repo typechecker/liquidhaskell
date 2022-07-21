@@ -52,7 +52,7 @@ module Internal.GHC.API.Common (
     , TopLevelFlag(..)
     , TcGblEnv
     , IsBootInterface
-    , Hsc
+    , Hsc(..)
     , HscEnv
     , TcM
     , TcRn
@@ -191,6 +191,18 @@ module Internal.GHC.API.Common (
     , dataConWorkId
     , lookupNameEnv_NF
     , mkDataConWorkerOcc
+    , makeSimpleDetails
+    , mkApiErr
+    , mgModSummaries
+    , hsc_mod_graph
+    , ms_mod_name
+    , md_types
+    , mi_module
+    , ml_hs_file
+    , hsc_EPS
+    , eps_PTE
+    , getEnv
+    , Env(..)
     , HsSrcBang(..)
     , BuiltInSyntax(..)
     , ConLike(..)
@@ -202,6 +214,8 @@ module Internal.GHC.API.Common (
     , SrcUnpackedness(..)
     , SrcStrictness(..)
     , TyConBndrVis(..)
+    , ImpDeclSpec(..)
+    , VarBndr(..)
     ) where
 
 import GhcPlugins
@@ -214,8 +228,8 @@ import GHC
     , GhcT, ClsInst, FamInst, GhcRn, Class, LHsExpr, LHsType, LHsDecl
     , GhcPs, DesugaredModule(..), HsModule(..), HsDecl(..), Sig(..), GhcMonad (..), ParsedMod(..)
     )
-import TcRnTypes (IfM, TcGblEnv, TcM)
-import TcRnMonad (TcRn, mkLongErrAt, getTopEnv)
+import TcRnTypes (IfM, TcGblEnv, TcM, Env(..))
+import TcRnMonad (TcRn, mkLongErrAt, getTopEnv, getEnv)
 import TcRnDriver (TcRnExprMode(..), tcRnLookupRdrName)
 import GHC.Hs (noExtField)
 import CoreLint (lintCoreBindings)
@@ -223,7 +237,7 @@ import TcOrigin (lexprCtOrigin)
 import Predicate (getClassPredTys)
 import Finder (findExposedPackageModule)
 import Panic (throwGhcExceptionIO)
-import HscMain (hscDesugar, hscTypecheckRename, hscParse, hscTcRcLookupName)
+import HscMain (hscDesugar, hscTypecheckRename, hscParse, hscTcRcLookupName, makeSimpleDetails)
 import TyCoRep (Type(TyVarTy, AppTy, TyConApp, ForAllTy))
 import Unique (mkPreludeTyConUnique, mkPreludeDataConUnique, hasKey, dataConWorkerUnique)
 import PrelNames (gHC_TYPES)

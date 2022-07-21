@@ -53,7 +53,7 @@ module Internal.GHC.API (
     , TopLevelFlag(..)
     , TcGblEnv
     , IsBootInterface
-    , Hsc
+    , Hsc(..)
     , HscEnv
     , TcM
     , TcRn
@@ -166,7 +166,21 @@ module Internal.GHC.API (
     , tcRnLookupRdrName
     , isPromotedDataCon
     , isTupleDataCon
+    , makeSimpleDetails
+    , mkApiErr
+    , mgModSummaries
+    , hsc_mod_graph
+    , ms_mod_name
+    , md_types
+    , mi_module
+    , ml_hs_file
+    , hsc_EPS
+    , eps_PTE
+    , getEnv
+    , Env(..)
     , TyConBndrVis(..)
+    , ImpDeclSpec(..)
+    , VarBndr(..)
 
     -- * Shimmed
     , UnhelpfulSpanReason(..)
